@@ -17,7 +17,7 @@ SUDO='sudo'
 if [ !$EDITOR ]; then
 	echo -n "Choose your preferred editor: "
 	read EDITOR
-    EDITOR=`which ${EDITOR}`
+	EDITOR=`which ${EDITOR}`
 fi
 if [ $EDITOR == '' ]; then
 	EDITOR="/usr/bin/pico"
@@ -45,12 +45,12 @@ fi
 if [ $HOSTNAME ]; then
 	echo "$HOSTNAME" | $SUDO tee /etc/hostname
 	echo "127.0.0.1   $HOSTNAME" | $SUDO tee -a /etc/hosts
-    echo -n "### You may want to clean up this file to remove old hostnames:"
-    read IGNORE
-    $SUDO $EDITOR /etc/hosts
-    echo -n "### Reboot for hostname to take effect: "
-    read IGNORE
-    # Reboot for hostname to take effect
+	echo -n "### You may want to clean up this file to remove old hostnames:"
+	read IGNORE
+	$SUDO $EDITOR /etc/hosts
+	echo -n "### Reboot for hostname to take effect: "
+	read IGNORE
+	# Reboot for hostname to take effect
 	$SUDO reboot
 fi
 HOSTNAME=`cat /etc/hostname`
@@ -60,49 +60,49 @@ echo "### Your IP address is ${IP_ADDRESS}"
 # Install LAMP {{{
 # http://www.howtoforge.com/ubuntu_lamp_for_newbies
 if [ `check_dpkg apache2` = 0 ]; then
-    echo "### Installing apache2..."
-    $SUDO apt-get install apache2
-    echo "### You may want to add the following line to your client's /etc/hosts"
-    echo "$IP_ADDRESS   $HOSTNAME"
-    echo -n "### Test out Apache by going to http://${IP_ADDRESS}/:"
-    read IGNORE
+	echo "### Installing apache2..."
+	$SUDO apt-get install apache2
+	echo "### You may want to add the following line to your client's /etc/hosts"
+	echo "$IP_ADDRESS   $HOSTNAME"
+	echo -n "### Test out Apache by going to http://${IP_ADDRESS}/:"
+	read IGNORE
 fi
 if [ `check_dpkg libapache2-mod-php5` = 0 ]; then
-    echo "### Installing php..."
-    $SUDO apt-get install php5 libapache2-mod-php5
-    $SUDO service apache2 graceful
-    echo "<?php phpinfo(); ?>" | $SUDO tee /var/www/phpinfo.php
-    echo -n "### Test out Apache by going to http://${IP_ADDRESS}/phpinfo.php:"
-    read IGNORE
+	echo "### Installing php..."
+	$SUDO apt-get install php5 libapache2-mod-php5
+	$SUDO service apache2 graceful
+	echo "<?php phpinfo(); ?>" | $SUDO tee /var/www/phpinfo.php
+	echo -n "### Test out Apache by going to http://${IP_ADDRESS}/phpinfo.php:"
+	read IGNORE
 fi
 if [ `check_dpkg mysql-server` = 0 ]; then
-    echo "### Installing mysql..."
-    $SUDO apt-get install mysql-server
-    echo "### (Optional) May want to add"
-    echo "bind address = ${IP_ADDRESS}"
-    echo -n "### so outside IPs can bind:"
-    read IGNORE
-    $SUDO $EDITOR /etc/mysql/my.cnf
-    sudo service mysql restart
+	echo "### Installing mysql..."
+	$SUDO apt-get install mysql-server
+	echo "### (Optional) May want to add"
+	echo "bind address = ${IP_ADDRESS}"
+	echo -n "### so outside IPs can bind:"
+	read IGNORE
+	$SUDO $EDITOR /etc/mysql/my.cnf
+	sudo service mysql restart
 fi
 if [ `check_dpkg phpmyadmin` = 0 ]; then
-    echo "### Installing phpmyadmin interfaces..."
-    $SUDO apt-get install libapache2-mod-auth-mysql php5-mysql phpmyadmin
-    $SUDO service apache2 graceful
-    echo -n "### Test out PHPMyAdmin by going to http://${IP_ADDRESS}/phpmyadmin/:"
-    read IGNORE
+	echo "### Installing phpmyadmin interfaces..."
+	$SUDO apt-get install libapache2-mod-auth-mysql php5-mysql phpmyadmin
+	$SUDO service apache2 graceful
+	echo -n "### Test out PHPMyAdmin by going to http://${IP_ADDRESS}/phpmyadmin/:"
+	read IGNORE
 fi
 echo "### LAMP installed"
 # }}}
 # Install PHP Compile environment {{{
 # http://ubuntuforums.org/showthread.php?t=525257
 if [ `check_dpkg php5-dev` = 0 ]; then
-    echo "### Installing PHP dev libraries..."
-    $SUDO apt-get install php5-dev
+	echo "### Installing PHP dev libraries..."
+	$SUDO apt-get install php5-dev
 fi
 if [ `check_dpkg php-pear` = 0 ]; then
-    echo "### Installing PEAR libraries..."
-    $SUDO apt-get install php-pear
+	echo "### Installing PEAR libraries..."
+	$SUDO apt-get install php-pear
 fi
 # }}}
 
