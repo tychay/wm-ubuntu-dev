@@ -75,6 +75,32 @@ if [ `check_dpkg libapache2-mod-php5` = 0 ]; then
     echo -n "### Test out Apache by going to http://${IP_ADDRESS}/phpinfo.php:"
     read IGNORE
 fi
+if [ `check_dpkg mysql-server` = 0 ]; then
+    echo "### Installing mysql..."
+    $SUDO apt-get install mysql-server
+    echo -n "### (Optional) May want to add bind address ${IP_ADDR} so outside IPs can bind:"
+    read IGNORE
+    $SUDO $EDITOR /etc/mysql/my.conf
+fi
+if [ `check_dpkg phpmyadmin` = 0 ]; then
+    echo "### Installing phpmyadmin interfaces..."
+    $SUDO apt-get install libapache2-mod-auth-mysql php5-mysql phpmyadmin
+    $SUDO service apache2 graceful
+    echo -n "### Test out PHPMyAdmin by going to http://${IP_ADDRESS}/phpmyadmin/:"
+    read IGNORE
+fi
+echo "### LAMP installed"
+# }}}
+# Install PHP Compile environment {{{
+# http://ubuntuforums.org/showthread.php?t=525257
+if [ `check_dpkg php5-dev` = 0 ]; then
+    echo "### Installing PHP dev libraries..."
+    $SUDO apt-get install php5-dev
+fi
+if [ `check_dpkg php-pear` = 0 ]; then
+    echo "### Installing PEAR libraries..."
+    $SUDO apt-get install php-pear
+fi
 # }}}
 
 exit
