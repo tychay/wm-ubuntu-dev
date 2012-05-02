@@ -143,6 +143,25 @@ if [ `check_dpkg php-pear` = 0 ]; then
 fi
 # }}}
 PACKAGES_INSTALLED=""
+if [ ! -d 'build' ]; then
+	mkdir build
+fi
+# Install Zip {{{
+# Needed to unzip packages
+if [ `check_dpkg zip` ]; then
+	echo "### Installing zip..."
+	$SUDO apt-get install zip
+fi
+pecl_update_or_install curl curl php5-curl
+# }}}
+# Install curl {{{
+# Need curl to grab downloads
+if [ `check_dpkg curl` ]; then
+	echo "### Installing curl..."
+	$SUDO apt-get install curl
+fi
+pecl_update_or_install curl curl php5-curl
+# }}}
 # Install APC {{{
 pecl_update_or_install apc apc-beta php-apc
 # }}}
@@ -163,6 +182,7 @@ if [ `$PHP_EXT_TEST memcached` ]; then
 	fi
 else
 	echo "### Installing memcached extension..."
+	pushd build
 	if [ ! -f memcached-*.tgz ]; then
 		$SUDO pecl download memcached
 	fi
@@ -179,7 +199,8 @@ else
 		echo "### Be sure to add to your php.ini: extension=memcached.so"
 		echo "extension=memcached.so" | $SUDO tee /etc/php5/conf.d/memcached.ini
 		$SUDO cp /etc/php5/conf.d/memcached.ini /etc/php5/conf.d/memcached.ini
-		PACKAGES_INSTALLED="$1 $PACKAGES_INSTALLED"
+		PACKAGES_INSTALLED="memcached $PACKAGES_INSTALLED"
+	popd
 	popd
 fi
 # }}}
@@ -197,7 +218,41 @@ fi
 INCLUED='inclued-beta' #2010-02-22 it went beta, see http://pecl.php.net/package/inclued
 pecl_update_or_install inclued $INCLUED
 # }}}
-# TODO: xhprof
+# Install xhprof (facebook) {{{
+# http://stojg.se/notes/install-xhprof-for-php5-on-centos-ubuntu-and-debian/
+# https://github.com/facebook/xhprof
+XHPROF_URL="https://github.com/facebook/xhprof/zipball/master"
+XHPROF_ZIP="facebook-xhprof.zip"
+if [ `$PHP_EXT_TEST xhprof` ]; then
+	if [ $DO_UPGRADE ]; then
+		# TODO: upgrade xhprof?
+		echo '### Add upgrader for xhprof here?'
+	fi
+else
+	echo "### Installing xhprof extension..."
+	pushd build
+	if [ ! -f $XHPROF_ZIP ]; then
+		echo "### Downloading xhprof from Facebook GitHub..."
+		curl -L -o ${XHPROF_ZIP} ${XHPROF_URL}
+	fi
+	if [ ! -d 'facebook-xhprof-*' ]; then
+		unzip $XHPROF_ZIP
+	fi
+	pushd facebook-xhprof-*/extension
+		phpize
+		chmod a+x configure
+		./configure
+		make
+		$SUDO make install
+		echo "### Be sure to add to your php.ini: extension=xhprof.so"
+		echo "extension=xhprof.so" | $SUDO tee /etc/php5/conf.d/xhprof.ini
+		$SUDO cp /etc/php5/conf.d/xhprof.ini /etc/php5/conf.d/xhprof.ini
+		PACKAGES_INSTALLED="xhprof $PACKAGES_INSTALLED"
+	popd
+	popd
+fi
+# }}}
+# TODO: xhprof gui
 # TODO: Webgrind
 if [ "$PACKAGES_INSTALLED" ]; then
 	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
@@ -224,13 +279,7 @@ if [ $DISTRIBUTION = 'ubuntu' ]; then
 		$SUDO apt-get install libpcre3-dev
 	fi
 	# Need curl to grab packages
-	if [ `check_dpkg curl` ]; then
-		$SUDO apt-get install curl
-	fi
 	# Needed to unzip YUI packages
-	if [ `check_dpkg zip` ]; then
-		$SUDO apt-get install zip
-	fi
 	# Needed to execute YUI compressor
 	if [ `check_dpkg default-jre` ]; then
 		$SUDO apt-get install default-jre
