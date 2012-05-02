@@ -71,4 +71,5 @@ Install Parallels Tools:
 - Go to Sharing, Choose "None"
 - Click "Custom Folders..."
 - navigate and add pointer to this directory
-- `$ /media/psf/*directory name*/boostrap.sh` (repeat as necessary)
+- `$ cd /media/psf/*directory name*
+- `$ ./boostrap.sh` (repeat as necessary)

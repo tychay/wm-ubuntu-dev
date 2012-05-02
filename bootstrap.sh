@@ -11,9 +11,46 @@
 check_dpkg() { dpkg -l $1 | grep ^ii | wc -l; }
 is_eth0() { ifconfig | grep eth0 | wc -l; }
 get_ip() { ifconfig | grep 'inet addr' |  awk -F: '{ print $2 }' | awk '{ print $1 }' | grep -v 127.0.0.1; }
+pear_installed () { pear list -a | grep ^$1 | wc -l ; }
+PHP_EXT_TEST=./extension_installed.php
+# {{{  pecl_update_or_install()
+# $1 = package name
+# $2 = package name in pecl (may have -beta or the like)
+# $3 = if set, package name in ubuntu
+pecl_update_or_install () {
+	if [ `$PHP_EXT_TEST $1` ]; then
+		if [ $DO_UPGRADE ]; then
+			if [ "$3" != '' ]; then
+				echo "### Updating $1...";
+				$SUDO apt-get update $3
+			else
+				echo "### Upgrading $1...";
+				$SUDO pecl upgrade $2
+			fi
+		fi
+	else
+		echo "### Installing $1...";
+		if [ "$3" != '' ]; then
+			$SUDO apt-get install $3
+		else
+			$SUDO pecl install $2
+			if [ "$1" = 'xdebug' ]; then
+				echo '### Be sure to add to your php.ini: zend_extension="<something>/xdebug.so" NOT! extension=xdebug.so'
+			else
+				echo "### Be sure to add to your php.ini: extension=$1.so"
+				# Let's add config for stuff manually
+				echo "extension=${1}.so" | $SUDO tee /etc/php5/conf.d/${1}.ini
+				$SUDO cp /etc/php5/conf.d/${1}.ini /etc/php5/conf.d/${1}.ini
+			fi
+		fi
+		PACKAGES_INSTALLED="$1 $PACKAGES_INSTALLED"
+	fi
+}
+# }}}
 # }}}
 # Set up environment ($EDITOR) {{{
 SUDO='sudo'
+#DO_UPGRADE='1' #Set this to upgrade
 if [ !$EDITOR ]; then
 	echo -n "Choose your preferred editor: "
 	read EDITOR
@@ -105,7 +142,51 @@ if [ `check_dpkg php-pear` = 0 ]; then
 	$SUDO apt-get install php-pear
 fi
 # }}}
-
+PACKAGES_INSTALLED=""
+# Install APC {{{
+pecl_update_or_install apc apc-beta php-apc
+# }}}
+# Install igbinary (used for libmemcached) {{{
+pecl_update_or_install igbinary igbinary
+# }}}
+# Install memcached (with igbinary) {{{
+# TODO: -enable-memcached-igbinary (in php-pecl-memcached)
+if [ `check_dpkg libmemcached6` = 0 ]; then
+	echo "### Installing libmemcached libraries..."
+	$SUDO apt-get install libmemcached6 libmemcached-dev
+fi
+if [ `$PHP_EXT_TEST memcached` ]; then
+	# TODO: upgrade memcached?
+	if [ $DO_UPGRADE ]; then
+		echo '### Add upgrader for memcached here?'
+	fi
+else
+	echo "### Installing memcached extension..."
+	if [ ! -f memcached-*.tgz ]; then
+		$SUDO pecl download memcached
+	fi
+	if [ ! -d memcached-* ]; then
+		tar zxf memcached-*.tgz
+		rm -f packet.xml channel.xml
+	fi
+	pushd memcached-*
+		phpize
+		chmod a+x configure
+		./configure -enable-memcached-igbinary --with-libmemcached-dir=/usr
+		make
+		$SUDO make install
+		echo "### Be sure to add to your php.ini: extension=memcached.so"
+		echo "extension=memcached.so" | $SUDO tee /etc/php5/conf.d/memcached.ini
+		$SUDO cp /etc/php5/conf.d/memcached.ini /etc/php5/conf.d/memcached.ini
+		PACKAGES_INSTALLED="$1 $PACKAGES_INSTALLED"
+	popd
+fi
+# }}}
+if [ "$PACKAGES_INSTALLED" ]; then
+	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
+	echo "###  $PACKAGES_INSTALLED"
+fi
+$SUDO service apache2 graceful
 exit
 
 
@@ -114,7 +195,6 @@ exit
 
 
 
-#DO_UPGRADE='1' #Set this to upgrade
 # EDITME: Set the full path to binaries {{{
 if [ $1 ]; then
 	DISTRIBUTION=$1
@@ -133,16 +213,12 @@ echo "### Distribution is $DISTRIBUTION";
 # Should it run as sudo? 
 SUDO='sudo'
 
-# execute from the base directory not this one
-BASE_DIR=`pwd`
 
 PHP=`which php`
 if [ $PHP != '/usr/bin/php' ]; then
 	echo "### Do to env POSIXness on Linux, we can not depend on /usr/bin/env. Files such as generate_gloabl_version.php assumes PHP are located at /usr/bin/php which is not the case for you. You may need to update these bin/* scripts for this to work."
 fi
 APACHECTL=`which apachectl`
-# Set this to php-memcached instead of php-memcache
-LIBMEMCACHED=""
 PHP_INI=/etc/php.ini # TODO: check php --ini
 
 # MacPorts: {{{
@@ -257,49 +333,6 @@ fi
 # }}}
 # }}}
 # shell function declarations {{{
-pear_installed () { pear list -a | grep ^$1 | wc -l ; }
-# {{{  pecl_update_or_install()
-# $1 = package name
-# $2 = package name in pecl (may have -beta or the like)
-# $3 = if set, yum package name
-# $4 = if set, package name in macports
-# $5 = if set, package name in ubuntu
-pecl_update_or_install () {
-	if [ `$PHP_EXT_TEST $1` ]; then
-		if [ $DO_UPGRADE ]; then
-			if [ "$DISTRIBUTION" = 'fedora' ] && [ "$3" != '' ]; then
-				echo "### UPDATING $1...";
-				$SUDO yum update $3
-			elif [ "$DISTRIBUTION" = 'macports' ] && [ "$4" != '' ]; then
-				echo "### $1 is already up-to-date"
-			elif [ "$DISTRIBUTION" = 'ubuntu' ] && [ "$5" != '' ]; then
-				echo "### UPDATING $1...";
-				$SUDO apt-get update $5
-			else
-				echo "### UPGRADING $1...";
-				$SUDO pecl upgrade $2
-			fi
-		fi
-	else
-		echo "### INSTALLING $1";
-		if [ "$DISTRIBUTION" = 'fedora' ] && [ "$3" != '' ]; then
-			$SUDO yum install $3
-		elif [ "$DISTRIBUTION" = 'macports' ] && [ "$4" != '' ]; then
-			$SUDO port install $3
-		elif [ "$DISTRIBUTION" = 'ubuntu' ] && [ "$5" != '' ]; then
-			$SUDO apt-get install $5
-		else
-			$SUDO pecl install $2
-			if [ "$1" = 'xdebug' ]; then
-				echo '### Be sure to add to your php.ini: zend_extension="<something>/xdebug.so" NOT! extension=xdebug.so'
-			else
-				echo "### Be sure to add to your php.ini: extension=$1.so"
-			fi
-		fi
-		PACKAGES_INSTALLED="$1 $PACKAGES_INSTALLED"
-	fi
-}
-# }}}
 # {{{  pear_update_or_install()
 # $1 = package name
 # $2 = package name in pear (may have -beta or the like)
@@ -324,7 +357,6 @@ pear_update_or_install () {
 # }}}
 # }}}
 # UTILS {{{
-PHP_EXT_TEST=$BASE_DIR/bs/extension_installed.php
 PHP_VERSION_TEST=$BASE_DIR/bs/version_compare.php
 # }}}
 # PACKAGES {{{
@@ -348,16 +380,6 @@ fi
 #APC='http://pecl.php.net/get/APC'
 # }}}
 INCLUED='inclued-beta' #2010-02-22 it went beta, see http://pecl.php.net/package/inclued
-# MEMCACHE {{{
-MEMCACHE_PKG='memcache'
-MEMCACHE='memcache'
-MEMCACHE_PORT=''
-if [ $LIBMEMCACHED ]; then
-	MEMCACHE='memcached-beta'
-	MEMCACHE_PKG='memcached'
-	MEMCACHE_PORT='php5-memcached +igbinary'
-fi
-# }}}
 # }}}
 # pear packages {{{
 #SAVANT='http://phpsavant.com/Savant3-3.0.0.tgz'
@@ -396,7 +418,6 @@ RUNKIT_PKG="${RUNKIT_DIR}.tgz"
 RUNKIT_URL="https://github.com/downloads/zenovich/runkit/${RUNKIT_PKG}"
 # }}}
 # }}}
-PACKAGES_INSTALLED=""
 # }}}
 # Make directories {{{
 if [ ! -d packages ]; then
@@ -426,88 +447,6 @@ if [ `which pecl` ]; then
 	$SUDO pear config-set php_ini $PHP_INI
 	$SUDO pecl config-set php_ini $PHP_INI
 fi
-# }}}
-# Install APC {{{
-pecl_update_or_install apc $APC php-pecl-apc php5-apc
-# }}}
-# Install runkit {{{
-if [ `$PHP_EXT_TEST runkit` ]; then
-	if [ $DO_UPGRADE ]; then
-		echo '### UPGRADING RUNKIT....';
-		if [ $RUNKIT != 'cvs' ]; then
-			$SUDO pecl upgrade $RUNKIT
-		fi
-	fi
-else
-	echo '### INSTALLING RUNKIT';
-# TODO: add test for PHP 5.2
-	if [ $RUNKIT != 'cvs' ]; then
-		$SUDO pecl install $RUNKIT
-		RUNKIT="$BASE_DIR/packages/pecl/runkit"
-	else
-		pushd packages
-			if [ ! -f $RUNKIT_PKG ]; then
-				curl -L -O $RUNKIT_URL
-			fi
-			if [ ! -d $RUNKIT_DIR ]; then
-				tar xvf $RUNKIT_PKG
-			fi
-			pushd $RUNKIT_DIR
-				make distclean
-				phpize
-				chmod a+x ./configure
-				./configure --enable-runkit
-				make
-				make test
-				$SUDO make install
-			popd
-			#if [ ! -d pecl/runkit ]; then
-			#	# PHP migrated to svn
-			#	#cvs -d :pserver:cvsread@cvs.php.net:/repository checkout  pecl/runkit
-			#	svn co http://svn.php.net/repository/pecl/runkit/trunk/ pecl/runkit
-			#fi
-			#pushd pecl/runkit
-			#	#cvs update
-			#	svn update
-			#	make distclean
-			#	# Apply patch for bug http://pecl.php.net/bugs/bug.php?id=13363
-			#	patch -p0 <$BASE_DIR/bs/runkit-bug13363.diff 
-			#	phpize
-			#	./configure --enable-runkit
-			#	make
-			#	make test
-			#	$SUDO make install
-			#popd
-		popd
-	fi
-	echo 'be sure to add to your php.ini: extension=runkit.so'
-fi
-# }}}
-# Install igbinary {{{
-# TODO: -enable-memcached-igbinary (in php-pecl-memcached)
-# igbinary http://opensource.dynamoid.com/
-# performance settings: http://ilia.ws/archives/211-Igbinary,-The-great-serializer.html#extended  
-#if [ `$PHP_EXT_TEST igbinary` ]; then
-#	echo '### igbinary installed'
-#else
-#	if [ $DISTRIBUTION = 'macports' ]; then
-#		$SUDO port install php5-igbinary
-#	else
-#		pushd packages
-#			curl -O http://opensource.dynamoid.com/igbinary-1.0.2.tar.gz
-#		popd
-#		pushd build
-#			gzip -dc ../packages/igbinary-1.0.2.tar.gz | tar xf -
-#			pushd igbinary-1.0.2
-#				phpize
-#				./configure
-#				make
-#				$SUDO make install
-#			popd
-#		popd
-#	fi
-#fi
-pecl_update_or_install igbinary igbinary '' php5-igbinary
 # }}}
 # Install XDEBUG {{{
 pecl_update_or_install xdebug xdebug php-pecl-xdebug php5-xdebug php5-xdebug
@@ -549,52 +488,6 @@ pecl_update_or_install inclued $INCLUED '' ''
 # Install mailparse {{{
 # Needed fr parsing RFC822 e-mails
 pecl_update_or_install mailparse mailparse php-pecl-mailparse php5-mailparse
-# }}}
-# Install memcache(d) with igbinary {{{
-if [ $DISTRIBUTION = 'fedora' ] && [ $MEMCACHE = 'memcached' ]; then
-	if [ `$PHP_EXT_TEST $1` ]; then
-		echo "### memcached already installed, doing nothing"
-	else
-		rpm -Uvh http://rpms.famillecollet.com/remi-release-12.rpm
-		$SUDO rpm -Uvh http://rpms.famillecollet.com/remi-release-12.rpm
-		$SUDO yum --enablerepo=remi install libmemcached php-pecl-memcached
-
-#		$SUDO yum install libmemcached-devel
-#		pushd packages
-#			pecl download memcached
-#			curl -O http://launchpadlibrarian.net/56440579/libmemcached-0.44.tar.gz
-#		popd
-#		pushd build
-#			rm -rf *
-#			mkdir mybuild\
-#				mybuild/BUILD\
-#				mybuild/RPMS\
-#				mybuild/RPMS/i386\
-#				mybuild/SOURCES\
-#				mybuild/SPECS\
-#				mybuild/SRPMS
-#			cp ../packages/memcached*.tgz mybuild/SOURCES
-#			cp ../packages/libmemcached*.tar.gz mybuild/SOURCES
-#			#cat "topdir: ${BASE_DIR}/build/mybuild" > ~/.rpmrc
-#			rpmbuild -bb --define "_topdir ${BASE_DIR}/build/mybuild" ../res/libmemcached.spec
-#			cp mybuild/RPMS/x86_64/libmemcached-0.44-1.fc12.x86_64.rpm ../packages
-#			cp mybuild/RPMS/x86_64/libmemcached-devel-0.44-1.fc12.x86_64.rpm ../packages
-#			$SUDO rpm -i ../packages/libmemcached-*.rpm
-#			rpmbuild -bb --define "_topdir ${BASE_DIR}/build/mybuild" ../res/php-pecl-memcached.spec
-#			cp mybuild/RPMS/x86_64/php-pecl-memcached-1.0.2-1.fc12.x86_64.rpm ../packages
-#			$SUDO rpm -i ../packages/php-pecl-memcached*.rpm
-#			#gzip -dc ../packages/memcached*.tgz | tar xf -
-#			#pushd memcached*
-#			#	phpize
-#			#	./configure --with-libmemcached-dir=${LIBMEMCACHED} -enable-memcached-igbinary
-#			#	make
-#			#	$SUDO make install
-#			#popd
-#		popd
-	fi
-else
-	pecl_update_or_install $MEMCACHE_PKG $MEMCACHE php-pecl-$MEMCACHE "$MEMCACHE_PORT" php5-memcached
-fi
 # }}}
 # Install PEAR packages: {{{ Savant, FirePHP, PhpDocumentor
 # Old download was: SAVANT='http://phpsavant.com/Savant3-3.0.0.tgz'
@@ -688,8 +581,3 @@ popd
 # }}}
 #echo "### Running phpdoc"
 #./bs/phpdoc.sh
-if [ "$PACKAGES_INSTALLED" ]; then
-	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
-	echo "###  $PACKAGES_INSTALLED"
-fi
-$SUDO $APACHECTL graceful
