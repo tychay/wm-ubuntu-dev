@@ -150,6 +150,7 @@ pecl_update_or_install apc apc-beta php-apc
 pecl_update_or_install igbinary igbinary
 # }}}
 # Install memcached (with igbinary) {{{
+# http://www.neanderthal-technology.com/2011/11/ubuntu-10-install-php-memcached-with-igbinary-support/
 # TODO: -enable-memcached-igbinary (in php-pecl-memcached)
 if [ `check_dpkg libmemcached6` = 0 ]; then
 	echo "### Installing libmemcached libraries..."
@@ -182,6 +183,22 @@ else
 	popd
 fi
 # }}}
+# Install XDEBUG {{{
+pecl_update_or_install xdebug xdebug php5-xdebug
+# }}}
+# Install Graphviz (used for showing callgraphs in inclued or xhprof) {{{
+if [ `check_dpkg graphviz` = 0 ]; then
+	echo "### Installing GraphViz...";
+	$SUDO apt-get install graphviz
+fi
+# }}}
+# Install inclued {{{
+# No fedora package for inclued
+INCLUED='inclued-beta' #2010-02-22 it went beta, see http://pecl.php.net/package/inclued
+pecl_update_or_install inclued $INCLUED
+# }}}
+# TODO: xhprof
+# TODO: Webgrind
 if [ "$PACKAGES_INSTALLED" ]; then
 	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
 	echo "###  $PACKAGES_INSTALLED"
@@ -379,7 +396,6 @@ if [ `$PHP_VERSION_TEST 5.3` ]; then
 fi
 #APC='http://pecl.php.net/get/APC'
 # }}}
-INCLUED='inclued-beta' #2010-02-22 it went beta, see http://pecl.php.net/package/inclued
 # }}}
 # pear packages {{{
 #SAVANT='http://phpsavant.com/Savant3-3.0.0.tgz'
@@ -448,9 +464,6 @@ if [ `which pecl` ]; then
 	$SUDO pecl config-set php_ini $PHP_INI
 fi
 # }}}
-# Install XDEBUG {{{
-pecl_update_or_install xdebug xdebug php-pecl-xdebug php5-xdebug php5-xdebug
-# }}}
 # Install big_int {{{ http://pecl.php.net/package/big_int
 #pecl_update_or_install big_int big_int
 # BUG: Cannot find config.m4 (in big_int-1.0.7)
@@ -480,10 +493,6 @@ fi
 #else
 #	$SUDO pecl install big_int
 #fi
-# }}}
-# Install inclued {{{
-# No fedora package for inclued
-pecl_update_or_install inclued $INCLUED '' ''
 # }}}
 # Install mailparse {{{
 # Needed fr parsing RFC822 e-mails
