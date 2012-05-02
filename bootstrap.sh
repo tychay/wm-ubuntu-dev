@@ -146,6 +146,14 @@ PACKAGES_INSTALLED=""
 if [ ! -d 'build' ]; then
 	mkdir build
 fi
+# Install Git {{{
+# Needed to generate version numbers and sync git repositories
+if [ `check_dpkg git` ]; then
+	echo "### Installing git..."
+	$SUDO apt-get install git
+fi
+pecl_update_or_install curl curl php5-curl
+# }}}
 # Install Zip {{{
 # Needed to unzip packages
 if [ `check_dpkg zip` ]; then
@@ -252,7 +260,20 @@ else
 	popd
 fi
 # }}}
-# TODO: xhprof gui
+# Install XHGUI {{{
+# http://blog.preinheimer.com/index.php?/archives/355-A-GUI-for-XHProf.html
+# https://github.com/preinheimer/xhprof
+# http://phpadvent.org/2010/profiling-with-xhgui-by-paul-reinheimer
+XHPROF_GUI_GIT="git://github.com/preinheimer/xhprof.git"
+XHPROF_GUI="xhprof_lib"
+if [ ! -d build/${XHPROF_GUI} ]; then
+	echo "### Downloading XHGui...."
+	pushd build
+		git clone $XHPROF_GUI_GIT
+	popd
+fi
+# TODO: install xhprof gui (a la phpmyadmin)
+# }}}
 # TODO: Webgrind
 if [ "$PACKAGES_INSTALLED" ]; then
 	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
@@ -283,10 +304,6 @@ if [ $DISTRIBUTION = 'ubuntu' ]; then
 	# Needed to execute YUI compressor
 	if [ `check_dpkg default-jre` ]; then
 		$SUDO apt-get install default-jre
-	fi
-	# Needed to generate version numbers
-	if [ `check_dpkg git` ]; then
-		$SUDO apt-get install git
 	fi
 	echo "### REMEMBER! On ubuntu, there are two different directories for CLI PHP and APACHE2 PHP configuration. Both must be updated for this script to work properly"
 fi
