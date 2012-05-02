@@ -208,112 +208,6 @@ exit
 
 
 
-
-
-
-
-# EDITME: Set the full path to binaries {{{
-if [ $1 ]; then
-	DISTRIBUTION=$1
-else
-	if [ "`which port`" != '' ]; then
-		DISTRIBUTION='macports'
-	elif [ "`which yum`" != '' ]; then
-		DISTRIBUTION='fedora'
-	elif [ "`which apt-get`" != '' ]; then
-		DISTRIBUTION='ubuntu'
-	else
-		DISTRIBUTION='???'
-	fi
-fi
-echo "### Distribution is $DISTRIBUTION";
-# Should it run as sudo? 
-SUDO='sudo'
-
-
-PHP=`which php`
-if [ $PHP != '/usr/bin/php' ]; then
-	echo "### Do to env POSIXness on Linux, we can not depend on /usr/bin/env. Files such as generate_gloabl_version.php assumes PHP are located at /usr/bin/php which is not the case for you. You may need to update these bin/* scripts for this to work."
-fi
-APACHECTL=`which apachectl`
-PHP_INI=/etc/php.ini # TODO: check php --ini
-
-# MacPorts: {{{
-if [ $DISTRIBUTION = "macports" ]; then
-# Instructions for installing: {{{
-# http://forums.macnn.com/79/developer-center/322362/tutorial-installing-apache-2-php-5-a/
-# 0) Have XCode installed
-# 1) install MacPorts Pkg http://www.macports.org/install.php
-# 2) create a new terminal
-# 3) $ sudo port -v selfupdate						  #update ports
-# 4) $ sudo port install apache2						#install apache
-#	$ sudo port install mysql5 +server				 #install mysql
-#	$ sudo port install php5 +apache2 +pear
-#													   #install php+pear
-# 5) $ cd /opt/local/apache2/modules					$install mod_php
-#	$ sudo /opt/local/apache2/bin/apxs -a -e -n "php5" libphp5.so
-# 6) $ sudo vim /opt/local/apache2/conf/httpd.conf
-#	#DocumentRoot "/opt/local/apache2/htdocs"		  #preserve default site
-#	DocumentRoot "/Library/WebServer/Documents"
-#	...
-#	# User home directories
-#	Include conf/extra/httpd-userdir.conf			  # user home dirs
-#	Include conf/extra/mod_php.conf					# mod php loader
-#	# If you generated a cert into: /opt/local/apache2/conf/server.crt
-#	Include conf/extra/httpd-ssl.conf				  # ssl support
-#	#also consider conf/extra/httpd-autoindex.conf (Fancy directory listing)
-#	#			  conf/extra/httpd-default.conf (Some default settings)
-#	#			  conf/extra/httpd-vhosts.conf (virtual hosts)
-#	....
-#	#DirectoryIndex index.html
-#	DirectoryIndex index.html index.php
-# 6) $ vim ~/.profile
-#	alias apache2ctl='sudo /opt/local/apache2/bin/apachectl'
-#	alias mysqlstart='sudo mysqld_safe5 &'
-#	alias mysqlstop='mysqladmin5 -u root -p shutdown' 
-#	
-#	# remember to start a new shell
-# 7) $ sudo launchctl load -w /Library/LaunchDaemons/org.macports.apache2.plist
-#	$ sudo launchctl load -w /Library/LaunchDaemons/org.macports.mysql5.plist
-# 8) $ sudo mkdir /opt/local/var/db/mysql5
-#	$ sudo chown mysql:mysql /opt/local/var/db/mysql5
-#	$ sudo -u mysql mysql_install_db5
-#	$ mysqlstart
-#	$ mysqladmin5 -u root password [yourpw]
-# 9) $ sudo cp /opt/local/etc/php5/php.ini-production /opt/local/etc/php5/php.ini
-# 10)# TODO: PDO mysql is missing!!!!  # http://c6s.co.uk/webdev/119
-#	$ sudo port install php5-sqlite 
-#	$ sudo port install php5-mysql 
-#	$ sudo port install php5-tidy 
-#	$ sudo port install php5-zip 
-#	$ sudo port install php5-curl 
-#	$ sudo port install php5-big_int   #bcmath substitute
-#	# copy other ini files as necessary (most of them are in res/php.ini, but
-#	# be sure to edit xdebug.ini before copying
-# 11)$ apache2ctl start
-# AFTER:
-# --)$ sudo port load memcached
-# install sqlite3
-# }}}
-	if [ $DO_UPGRADE ]; then
-		$SUDO port -v selfupdate
-		#$SUDO port upgrade outdated
-	fi
-	$SUDO port install memcached
-	#PHP=/opt/local/bin/php
-	APACHECTL=/opt/local/apache2/bin/apachectl
-	#PHP_INI=/opt/local/etc
-	PHP_INI=/opt/local/etc/php5/php.ini
-	# Set path to libmemcached (to use php-memcached instead of php-memcache)
-	LIBMEMCACHED=/opt/local
-fi
-# }}}
-# Fedora/CentOS: {{{
-if [ $DISTRIBUTION = 'fedora' ]; then
-	# Set path to libmemcached (to use php-memcached instead of php-memcache)
-	LIBMEMCACHED=/usr
-fi
-# }}}
 # Ubuntu/Debian: {{{
 if [ $DISTRIBUTION = 'ubuntu' ]; then
 	check_dpkg() { dpkg -l $1 | grep ^ii | wc -l; }
@@ -347,7 +241,6 @@ if [ $DISTRIBUTION = 'ubuntu' ]; then
 	fi
 	echo "### REMEMBER! On ubuntu, there are two different directories for CLI PHP and APACHE2 PHP configuration. Both must be updated for this script to work properly"
 fi
-# }}}
 # }}}
 # shell function declarations {{{
 # {{{  pear_update_or_install()
@@ -387,14 +280,6 @@ RUNKIT='channel://pecl.php.net/runkit-0.9'
 if [ `$PHP_VERSION_TEST 5.2` ]; then
 	RUNKIT='cvs'
 fi
-# }}}
-# APC {{{
-#http://pecl.php.net/package/apc
-APC='apc'
-if [ `$PHP_VERSION_TEST 5.3` ]; then
-	APC='apc-beta'
-fi
-#APC='http://pecl.php.net/get/APC'
 # }}}
 # }}}
 # pear packages {{{
@@ -542,28 +427,6 @@ pushd samples/www/m/res
 	if [ ! -d yui/${YUI_VERSION} ]; then
 		echo "### INSTALLING yui/${YUI_VERSION}..."
 		mv $BASE_DIR/build/yui ./yui/${YUI_VERSION}
-	fi
-popd
-# }}}
-# SAMPLES: Install samples {{{
-echo "### Building global_version config...."
-./framework/bin/generate_global_version.php samples/config/global_version.php
-pushd samples
-	if [ ! -d traces ]; then
-		mkdir traces
-		chmod 777 traces
-	fi
-	if [ ! -d inclued ]; then
-		mkdir inclued
-		chmod 777 inclued
-	fi
-	if [ ! -f www/.htaccess ]; then
-		echo "### Building .htaccess file for samples...."
-		cat res/default.htaccess | sed "s|{{{BASE_DIR}}}|${BASE_DIR}|" >www/.htaccess
-	fi
-	if [ ! -d www/m/dyn ]; then
-		mkdir www/m/dyn
-		chmod 777 www/m/dyn
 	fi
 popd
 # }}}
