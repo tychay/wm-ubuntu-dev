@@ -274,6 +274,15 @@ if [ ! -d build/${XHPROF_GUI} ]; then
 fi
 # TODO: install xhprof gui (a la phpmyadmin)
 # }}}
+# Install V8JS and extension {{{
+# http://css.dzone.com/articles/running-javascript-inside-php
+# TODO: -enable-memcached-igbinary (in php-pecl-memcached)
+if [ `check_dpkg libv8-dev` = 0 ]; then
+	echo "### Installing V8 library..."
+	$SUDO apt-get install libv8-dev libv8-dbg
+fi
+pecl_update_or_install v8js v8js
+# }}}
 # TODO: Webgrind
 if [ "$PACKAGES_INSTALLED" ]; then
 	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
