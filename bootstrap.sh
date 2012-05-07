@@ -281,7 +281,7 @@ if [ `check_dpkg libv8-dev` = 0 ]; then
 	echo "### Installing V8 library..."
 	$SUDO apt-get install libv8-dev libv8-dbg
 fi
-pecl_update_or_install v8js v8js
+pecl_update_or_install v8js v8js-beta
 # }}}
 # TODO: Webgrind
 if [ "$PACKAGES_INSTALLED" ]; then
