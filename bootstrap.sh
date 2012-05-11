@@ -60,6 +60,14 @@ if [ $EDITOR == '' ]; then
 	EDITOR="/usr/bin/pico"
 fi
 # }}}
+# {{{ $1 = HOSTNAME
+if [ $1 ]; then
+	HOSTNAME=$1
+else
+	echo -n "### If you wish to change the hostname (cloned an instance), please type in subdomain name: "
+	read HOSTNAME
+fi
+# }}}
 # Fix broken networking on clone {{{
 if [ `is_eth0` = 0 ]; then
 	echo "### Your networking is broken."
@@ -72,23 +80,18 @@ if [ `is_eth0` = 0 ]; then
 fi
 # }}}
 # Computer renaming (set $HOSTNAME) {{{
-if [ $1 ]; then
-	HOSTNAME=$1
-else
-	echo -n "### If you wish to change the hostname (cloned an instance), please type in subdomain name: "
-	read HOSTNAME
-fi
-
 if [ $HOSTNAME ]; then
-	echo "$HOSTNAME" | $SUDO tee /etc/hostname
-	echo "127.0.0.1   $HOSTNAME" | $SUDO tee -a /etc/hosts
-	echo -n "### You may want to clean up this file to remove old hostnames:"
-	read IGNORE
-	$SUDO $EDITOR /etc/hosts
-	echo -n "### Reboot for hostname to take effect: "
-	read IGNORE
-	# Reboot for hostname to take effect
-	$SUDO reboot
+	if [ `cat /etc/hostname` != $HOSTNAME ]; then
+		echo "$HOSTNAME" | $SUDO tee /etc/hostname
+		echo "127.0.0.1   $HOSTNAME" | $SUDO tee -a /etc/hosts
+		echo -n "### You may want to clean up this file to remove old hostnames:"
+		read IGNORE
+		$SUDO $EDITOR /etc/hosts
+		echo -n "### Reboot for hostname to take effect: "
+		read IGNORE
+		# Reboot for hostname to take effect
+		$SUDO reboot
+	fi
 fi
 HOSTNAME=`cat /etc/hostname`
 # }}}
