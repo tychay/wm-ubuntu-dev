@@ -5,3 +5,13 @@ Ubuntu Dev TODO:
 
 Wishlist:
 - integration with configs on mediawiki
+
+- Get fundraising payments installed
+	- Note that it's in subversion
+		- svn/mediawiki/branches/fundraising/deployment/payment_1_17
+		- (based on 1.17wmf1)
+	- Donation Interace: http://www.mediawiki.org/wiki/Extension:DonationInterface
+	- Contribution Tracking: http://www.mediawiki.org/wiki/Extension:ContributionTracking
+	- Parser Function (http://www.mediawiki.org/wiki/Extension:Parser_function_extensions)
+	- (soon)
+	- Debian ISOCodes
