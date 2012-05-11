@@ -119,10 +119,14 @@ if [ `check_dpkg mysql-server` = 0 ]; then
 	echo "### Installing mysql..."
 	$SUDO apt-get install mysql-server
 	echo "### (Optional) May want to add"
-	echo "bind address = ${IP_ADDRESS}"
+	echo "bind-address = ${IP_ADDRESS}"
 	echo -n "### so outside IPs can bind:"
 	read IGNORE
-	$SUDO $EDITOR /etc/mysql/my.cnf
+	if [ $EDITOR == '/usr/bin/vim' ]; then
+		$SUDO $EDITOR /etc/mysql/my.cnf +53
+	else
+		$SUDO $EDITOR /etc/mysql/my.cnf
+	fi
 	sudo service mysql restart
 fi
 if [ `check_dpkg phpmyadmin` = 0 ]; then
