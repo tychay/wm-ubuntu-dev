@@ -1,0 +1,7 @@
+Ubuntu Dev TODO:
+- make script take config directory
+- build at that config directory if necessary
+- config file git
+
+Wishlist:
+- integration with configs on mediawiki

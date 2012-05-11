@@ -12,7 +12,7 @@ You will need sudo priv's on the box.
 
 ## Download Parallels
 
-1. Go to [Ubuntu's website](http://www.ubuntu.com/) > Download > Server: Downlaod and Install 
+1. Go to [Ubuntu's website](http://www.ubuntu.com/) > Download > Server: Download and Install 
 2. [You willl be here](http://www.ubuntu.com/download/server/download). Download Latest, 64-bit
 3. ubuntu-11.10-server-amd64.iso (or later) will be in your Downloads folder or Desktop
 
@@ -32,10 +32,37 @@ You will need sudo priv's on the box.
 - Packages (none: install manually)
 - install GRUB (boot loader is correct, this is a virtual machine)
 
+## Get this code  (and your dev config) on this computer
+
+Basically you need to get this following files onto your instance somehow:
+
+- this project `wm-ubuntu-dev` 
+- the mediawiki core (and extensions)
+- (optional) the configuration files
+
+If on the cloud (amazon), `git clone`  on the instance. If using Parallels,
+`git clone` the repository onto your main computer and then link shared folders.
+
+### wm-ubuntu-dev
+
+This project is located at: https://github.com/tychay/wm-ubuntu-dev
+
+Either fork that instance or use this one directly.
+
+### mediawiki core
+
+### Configuration files.
+
+My working copy of these files is stored in GitHub at **TODO**.
+
+If you don't want to use it, a basic one can be automatically made for you by
+executing the wm-ubuntu-dev script. **TODO**
+
+
 ## Run the installer
 
 	$ cd *directory_where_wm-ubuntu-dev*
-	$ ./bootstrap.sh *new_hostname*
+	$ ./bootstrap.sh *new_hostname* *location of new config tree*
 
 ## Special: Install on Parallels
 
@@ -76,5 +103,4 @@ Install Parallels Tools:
 - Go to Sharing, Choose "None"
 - Click "Custom Folders..."
 - navigate and add pointer to this directory
-- `$ cd /media/psf/*directory name*
-- `$ ./boostrap.sh` (repeat as necessary)
+- follow "Run the Installer" above where: `*directory_where_wm-ubuntu-dev*` is `/media/psf/*directory name*` of share
