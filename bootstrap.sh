@@ -187,6 +187,9 @@ if [ `check_dpkg curl` ]; then
 fi
 pecl_update_or_install curl curl php5-curl
 # }}}
+# Install intl {{{
+pecl_update_or_install intl intl php5-intl
+# }}}
 # Install APC {{{
 pecl_update_or_install apc apc-beta php-apc
 # }}}
