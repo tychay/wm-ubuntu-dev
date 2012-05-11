@@ -32,13 +32,18 @@ You will need sudo priv's on the box.
 - Packages (none: install manually)
 - install GRUB (boot loader is correct, this is a virtual machine)
 
-## Install on Parallels
+## Run the installer
+
+	$ cd *directory_where_wm-ubuntu-dev*
+	$ ./bootstrap.sh *new_hostname*
+
+## Special: Install on Parallels
 
 Install Ubuntu:
 
 - start Parallels
 - Hit the + on Parallels Virtual Machines (or File > New…)
-- Double-click Install WIndows or another OS from DVD or image File (highlight Install Windows… and click Continue)
+- Double-click Install Windows or another OS from DVD or image File (highlight Install Windows… and click Continue)
 - Locate iso in /Downloads from drop down.
 - Paralells will auto-detect OS. (If it fails, select "Ubuntu Linux" list or use Other Linux Kernel (2.6))
 - Name it (I used "Ubuntu-11.10-server-amd64 Vanilla") and click "Install"
