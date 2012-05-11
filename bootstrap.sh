@@ -56,7 +56,7 @@ if [ !$EDITOR ]; then
 	read EDITOR
 	EDITOR=`which ${EDITOR}`
 fi
-if [ $EDITOR == '' ]; then
+if [ $EDITOR = '' ]; then
 	EDITOR="/usr/bin/pico"
 fi
 # }}}
