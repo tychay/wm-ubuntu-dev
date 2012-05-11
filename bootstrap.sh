@@ -52,7 +52,7 @@ pecl_update_or_install () {
 SUDO='sudo'
 #DO_UPGRADE='1' #Set this to upgrade
 if [ !$EDITOR ]; then
-	echo -n "Choose your preferred editor: "
+	echo -n "### Choose your preferred editor: "
 	read EDITOR
 	EDITOR=`which ${EDITOR}`
 fi
@@ -66,6 +66,15 @@ if [ $1 ]; then
 else
 	echo -n "### If you wish to change the hostname (cloned an instance), please type in subdomain name: "
 	read HOSTNAME
+fi
+# }}}
+# $2 = CONFIG_DIR {{{
+if [ $2 ]; then
+	CONFIG_DIR=$2
+fi
+if [ ! $CONFIG_DIR ]; then
+	echo -n "### Set directory to store configs: "
+	read CONFIG_DIR
 fi
 # }}}
 # Fix broken networking on clone {{{
@@ -97,6 +106,7 @@ HOSTNAME=`cat /etc/hostname`
 # }}}
 IP_ADDRESS=`get_ip`
 echo "### Your IP address is ${IP_ADDRESS}"
+$SUDO apt-get update
 # Install LAMP {{{
 # http://www.howtoforge.com/ubuntu_lamp_for_newbies
 if [ `check_dpkg apache2` = 0 ]; then
@@ -291,6 +301,42 @@ fi
 pecl_update_or_install v8js v8js-beta
 # }}}
 # TODO: Webgrind
+
+# Move configs magic {{{
+if [ ! -d $CONFIG_DIR ]; then
+	echo -n "### If you wish to change the hostname (cloned an instance), please type in subdomain name: "
+	mkdir $CONFIG_DIR
+fi
+# php config directory {{{
+pushd /etc/php5
+	if [ ! -d $CONFIG_DIR/phpconf.d ]; then
+		cp -r conf.d $CONFIG_DIR/phpconf.d
+	fi
+	pushd cli
+		$SUDO rm conf.d
+		$SUDO ln -s $CONFIG_DIR/phpconf.d conf.d
+	popd
+	pushd apache2
+		$SUDO rm conf.d
+		$SUDO ln -s $CONFIG_DIR/phpconf.d conf.d
+	popd
+# }}}
+# apache config directory {{{
+pushd /etc/apache2
+	if [ ! -d $CONFIG_DIR/apache2.d ]; then
+		cp -r sites-enabled $CONFIG_DIR/apache2.d
+	fi
+	if [ ! -h post-load ]; then
+		ln -s 
+		$SUDO ln -s $CONFIG_DIR/apache2.d post-load
+	fi
+	if [ ! -f apache2.conf.orig ]; then
+		$SUDO mv apache2.conf apache2.conf.orig
+		$SUDO cat apache2.conf.orig | sed "s|sites-enabled|post-load|" | $SUDO tee apache2.conf
+	fi
+# }}}
+# }}}
+
 if [ "$PACKAGES_INSTALLED" ]; then
 	echo '### You may need to add stuff to your $PHP_INI (or /etc/php.d/) and restart'
 	echo "###  $PACKAGES_INSTALLED"
