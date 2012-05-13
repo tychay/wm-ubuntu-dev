@@ -10,7 +10,7 @@ To use, start with an instance, get this file there and run `./install`
 You will need sudo priv's on the box.
 
 
-## Download Parallels
+## Download Ubuntu
 
 1. Go to [Ubuntu's website](http://www.ubuntu.com/) > Download > Server: Download and Install 
 2. [You willl be here](http://www.ubuntu.com/download/server/download). Download Latest, 64-bit
@@ -72,7 +72,7 @@ Install Ubuntu:
 - Hit the + on Parallels Virtual Machines (or File > New…)
 - Double-click Install Windows or another OS from DVD or image File (highlight Install Windows… and click Continue)
 - Locate iso in /Downloads from drop down.
-- Paralells will auto-detect OS. (If it fails, select "Ubuntu Linux" list or use Other Linux Kernel (2.6))
+- Parallels will auto-detect OS. (If it fails, select "Ubuntu Linux" list or use Other Linux Kernel (2.6))
 - Name it (I used "Ubuntu-11.10-server-amd64 Vanilla") and click "Install"
 - Go through the (install ubuntu above)
 
@@ -80,7 +80,8 @@ Install Ubuntu:
 
 - Check networking works with `$ ifconfig` (should have eth0)
 - `$ sudo -i`
-- `# pico /etc/udev/rules.d/70-persisten-net.rules` Delete the first PCI line and replace NAME="eth0" with name="eth1"
+- `# pico /etc/udev/rules.d/70-persistent-net.rules`
+- Delete the first PCI line and replace `name="eth0"` with `name="eth1"` and save
 - `# reboot`
 
 Install Parallels Tools:
