@@ -100,6 +100,8 @@ Install Parallels Tools:
 - `$ cd /usr/lib/parallels-tools`
 - `$ sudo ./install`
 
+Bind shared folder:
+
 - Click the settings in the lower right of the instance
 - Go to Sharing, Choose "None"
 - Click "Custom Folders..."
