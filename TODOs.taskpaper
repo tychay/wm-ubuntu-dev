@@ -1,11 +1,15 @@
 Ubuntu Dev TODO:
 - make script take config directory
 - build at that config directory if necessary
+- instructions for git integration
 - config file git
+- sync with gerrit
+	- echo: https://gerrit.wikimedia.org/r/#/c/5972/
 
-Wishlist:
-- integration with configs on mediawiki
 
+Projects:
+
+- fix cite extension
 - Get fundraising payments installed
 	- Note that it's in subversion
 		- svn/mediawiki/branches/fundraising/deployment/payment_1_17
@@ -15,3 +19,10 @@ Wishlist:
 	- Parser Function (http://www.mediawiki.org/wiki/Extension:Parser_function_extensions)
 	- (soon)
 	- Debian ISOCodes
+- memcached support
+- a-b testing
+	- central notice inttegration
+	- aaron halflaker's gadgets
+- login box
+Wishlist:
+- integration with configs on mediawiki
